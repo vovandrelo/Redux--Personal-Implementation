@@ -1,70 +1,65 @@
-# Getting Started with Create React App
+# Redux. Personal implementation
+Данное приложение представляет собой собственную реализацию Redux, а так же предоставляет справку-конспект о самом Redux.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+В данном приложении 
 
-## Available Scripts
+собственноручно написанную реализацию
 
-In the project directory, you can run:
+основные функции
 
-### `npm start`
+(раскрывает их внутренее устройство)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Конспект
+### Какие проблемы возникают при использовании React?
 
-### `npm test`
+В тех случаях, когда несколько компонентов, находящихся на разном уровне иерархии, должны изменять своё состояние в зависимости от каких-то внешних данных, используется поднятие состояния.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Поднятие состояния - это реализация, при которой данные, изменение которых должно повлиять на компоненты, находящиеся на разном уровне иерархии, указываются в качестве состояния их общего предка-компонента, а к дочерним передаётся через пропсы.
 
-### `npm run build`
+Однако, величина вложенности компонентов может быть достаточно большой, а так же надобность в передаваемых данных может присутствовать только у самого "глубокого" компонента, получается, все промежуточные звенья будут хранить эти данные и перерендериваться от их изменения зря.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Использование контекста
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Одним из способов относительного решения проблемы является использование контекста.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Контекст - некое подобие глобальной переменной, к которой имеют доступ указанные компоненты.
 
-### `npm run eject`
+Контекст позволяет хранить не только само глобальное состояние нескольких компонентов, но и функцию для его изменения. То есть из компонента можно не только получить доступ к некоторым глобальным данным, но и поменять их.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Контекст позволяет решить проблему передачи данных через множество компонентов, однако, проблема перерендера всех промежуточных компонентов остаётся открытой, так как при изменении контекста перерендериваются все компоненты, через которые он проходит.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Проблемы контекста
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Как только появляется необходимость в создании ещё одного глобального значения, возникают следующие проблемы:
+- Новое значение добавляется в уже существующий контекст, но в таком случае контекст рано или поздно сильно разрастётся, что приведёт к запутанной логике его работы. Например, изменение хотя бы одного значения контекста приведёт к перерендеру всех компонентов, зависящих от данного контекста, но использующих совсем другие значения контекста. 
+- Создание новое контекста, но в таком случае контекстов рано или поздно станет слишком много и в них будет легко запутаться.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Для решения всех проблем, связанных с контекстом, необходимо придумать единый источник истинности, который будет хранить сложные состояния, и при изменении которого будет происходить перерендер только необходимых компонентов, а не всего приложения.
 
-## Learn More
+### Redux
+Redux позволяет создавать в приложении некое глобальное состояние и обращаться к нему из любого компонента как для извлечения каких-либо данных, так и для их изменения. Причём, перерендеру будут подвергаться только те компоненты, которые
+как-либо зависят от изменённых данных.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+#### Изменение глобального состояния
+Изменение глобального состояния происходит на основании некоторых правил, который называются действиями (actions). Чтобы изменить глобальное состояние необходимо выбрать нужный action и передать его в dispatch, который, в свою очередь, отправит указанное действие в reducer. Reducer представляет собой механизм, имеющий информацию о всевозможных действиях над ГС и реализующий изменение ГС.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+То есть, изменение ГС происходит в 5 этапов:
+- Разработчиком выбирается небходимое действие;
+- Выбранное действие передаётся в dispatch;
+- Dispatch передаёт действие в reducer;
+- Reducer идентифицирует действие;
+- После идентификации reducer необходимым образом изменяет состояние;
 
-### Code Splitting
+#### Получение доступа к конкретной части ГС
+Получение доступа к конкретной части ГС осуществляется с помощью selector-а - функции, которая извлекает из ГС необходимые данные.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+#### API
+- Создание глобального состояния происходит с помощью функции createStore.
+- Для предоставления всем компонентам доступа к ГС их необходимо расположить внутри компонента Provider.
+- Для изменения ГС внутри компонента необходимо получить dispatch, который извлекается с помощью хука useDispatch().
+- Для получения какой-то части ГС внутри компонента и последующей подписки на него, необходимо использовать хук useSelector, в качестве аргумента которого принимается функция (selector), извлекающая из ГС необходимую часть.
 
-### Analyzing the Bundle Size
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Запуск приложения
+Для запуска приложения в терминале необходимо выполнить команду: npm run start
