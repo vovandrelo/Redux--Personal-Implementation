@@ -33,4 +33,5 @@ const rootReducer = (state = rootInitialState, action) => {
   return newState;
 };
 
+// Для создания ГС испольузется функция createStore, единственным аргументом которой является глобальный reducer:
 export const store = createStore(rootReducer);
